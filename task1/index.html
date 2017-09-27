@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Three Hello</title>
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+</head>
+<body onload="init()">
+<canvas id="mainCanvas" width="400px" height="300px"></canvas>
+<script src="three.js"></script>
+<script>
+    function init() {
+        // 渲染器
+        var renderer = new THREE.WebGLRenderer({
+            canvas: document.getElementById('mainCanvas'),
+            antialias: true
+        })
+        renderer.setClearColor(0x666666)
+
+        // 場景
+        var scene = new THREE.Scene()
+
+        // 照相機
+        var camera = new THREE.PerspectiveCamera(15, 400 / 300, 0.1, 100)
+        camera.position.set(2, 3, 7)
+        camera.lookAt(new THREE.Vector3(0, 0, 0))
+        scene.add(camera)
+
+        var material = new THREE.MeshLambertMaterial({
+            color: 0xc9c9c9
+        })
+
+        // 車題
+        var cube = new THREE.Mesh(
+            new THREE.CubeGeometry(2, 1, 1),
+            material
+        )
+        scene.add(cube)
+
+        // 車輪1
+        var tire1 = new THREE.Mesh(
+            new THREE.TorusGeometry(0.27, 0.09, 50, 100),
+            material
+        )
+        tire1.position.x = -0.6
+        tire1.position.y = -0.5
+        tire1.position.z = 0.5
+        scene.add(tire1)
+
+        var tire2 = new THREE.Mesh(
+            new THREE.TorusGeometry(0.27, 0.09, 50, 100),
+            material
+        )
+        tire2.position.x = 0.6
+        tire2.position.y = -0.5
+        tire2.position.z = 0.5
+        scene.add(tire2)
+
+        // 光照
+        var light = new THREE.PointLight(0xffffff, 2, 100);
+        light.position.set(5, 6, 3)
+        scene.add(light)
+
+        renderer.render(scene, camera)
+    }
+</script>
+</body>
+</html>
