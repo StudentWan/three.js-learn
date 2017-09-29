@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>three.js入門</title>
+    <title>光與影</title>
     <meta name="viewport"
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
@@ -19,36 +19,53 @@
             antialias: true
         })
         renderer.setClearColor(0x666666)
+        renderer.shadowMap.enabled = true
+        renderer.shadowMapSoft = true
 
         // 場景
         const scene = new THREE.Scene()
 
         // 照相機
-        const camera = new THREE.PerspectiveCamera(15, 400 / 300, 0.1, 100)
-        camera.position.set(3, 8, 6)
+        const camera = new THREE.OrthographicCamera(-2, 2, 1.875, -1.875, 0.1, 100)
+        camera.position.set(3, 3, 3)
         camera.lookAt(new THREE.Vector3(0, 0, 0))
         scene.add(camera)
 
         const material = new THREE.MeshLambertMaterial({
-            color: 0xc9c9c9
+            color: 0xffffff
         })
 
         // 車題
-        const cube = createCube({width: 2, height: 1, depth: 1}, material)
+        const cube = createCube({width: 2, height: 1.2, depth: 1}, material)
+        cube.castShadow = true
         scene.add(cube)
 
         // 車輪1
         const tire1 = createTorus({radius: .27, tube: .09, radialSegments: 50, tubularSegments: 100}, material)
-        tire1.position.set(-.6, -.5, .5)
+        tire1.position.set(-.6, -.6, .5)
+        tire1.castShadow = true
         scene.add(tire1)
 
+        // 車輪2
         const tire2 = createTorus({radius: .27, tube: .09, radialSegments: 50, tubularSegments: 100}, material)
-        tire2.position.set(.6, -.5, .5)
+        tire2.position.set(.5, -.6, .5)
+        tire2.castShadow = true
         scene.add(tire2)
 
+        const plane = createPlane({width: 5, height: 6}, new THREE.MeshLambertMaterial({
+            color: 0x9dac80
+        }))
+        // 沿著X軸旋轉
+        plane.rotation.x = -Math.PI / 2
+        plane.position.y = -1
+        plane.position.z = 1.55
+        plane.receiveShadow = true
+        scene.add(plane)
+
         // 光照
-        const light = new THREE.PointLight(0xffffff, 2, 100);
-        light.position.set(5, 6, 3)
+        const light = new THREE.DirectionalLight()
+        light.position.set(-2, 2, 2)
+        light.castShadow = true
         scene.add(light)
 
         renderer.render(scene, camera)
@@ -64,6 +81,13 @@
     function createTorus({radius, tube, radialSegments, tubularSegments}, material) {
         return new THREE.Mesh(
             new THREE.TorusGeometry(radius, tube, radialSegments, tubularSegments),
+            material
+        )
+    }
+
+    function createPlane({width, height}, material) {
+        return new THREE.Mesh(
+            new THREE.PlaneGeometry(width, height),
             material
         )
     }
