@@ -35,7 +35,8 @@
             color: 0xffffff
         })
 
-        // 車題
+
+        // 車體
         const cube = createCube({width: 2, height: 1.2, depth: 1}, material)
         cube.castShadow = true
         scene.add(cube)
@@ -70,7 +71,7 @@
 
         renderer.render(scene, camera)
     }
-    
+
     function createCube({width, height, depth}, material) {
         return new THREE.Mesh(
             new THREE.CubeGeometry(width, height, depth),

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>光與影</title>
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+</head>
+<body onload="init()">
+<canvas id="mainCanvas" width="400px" height="300px"></canvas>
+<script src="three.js"></script>
+<script>
+    function init() {
+        // 渲染器
+        const renderer = new THREE.WebGLRenderer({
+            canvas: document.getElementById('mainCanvas'),
+            antialias: true
+        })
+        renderer.setClearColor(0x666666)
+        renderer.shadowMap.enabled = true
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap
+
+        // 場景
+        const scene = new THREE.Scene()
+
+        // 材質loader
+        const loader = new THREE.TextureLoader()
+
+        // 照相機
+        const camera = new THREE.OrthographicCamera(-2, 2, 1.875, -1.875, 0.1, 100)
+        camera.position.set(3, 3, 3)
+        camera.lookAt(new THREE.Vector3(0, 0, 0))
+        scene.add(camera)
+
+        // 車
+        let carMaterial
+        // load a resource
+        loader.load(
+            // resource URL
+            './img/0.jpg',
+            // Function when resource is loaded
+            function (texture) {
+                // do something with the texture
+                carMaterial = new THREE.MeshLambertMaterial({
+                    map: texture
+                })
+                const cube = createCube({width: 2, height: 1.2, depth: 1}, carMaterial)
+                cube.castShadow = true
+                scene.add(cube)
+
+                const tire1 = createTorus({radius: .27, tube: .09, radialSegments: 50, tubularSegments: 100}, carMaterial)
+                tire1.position.set(-.6, -.6, .5)
+                tire1.castShadow = true
+                scene.add(tire1)
+
+                const tire2 = createTorus({radius: .27, tube: .09, radialSegments: 50, tubularSegments: 100}, carMaterial)
+                tire2.position.set(.5, -.6, .5)
+                tire2.castShadow = true
+                scene.add(tire2)
+
+                renderer.render(scene, camera)
+            }
+        )
+
+        // 地板
+        let planeMaterial
+        loader.load(
+            // resource URL
+            './img/chess.png',
+            // Function when resource is loaded
+            function (texture) {
+                // do something with the texture
+                texture.wrapS = texture.wrapT = THREE.RepeatWrapping
+                texture.repeat.set(4, 4)
+                planeMaterial = new THREE.MeshLambertMaterial({
+                    map: texture
+                })
+                const plane = createPlane({width: 5, height: 6}, planeMaterial)
+                // 沿著X軸旋轉
+                plane.rotation.x = -Math.PI / 2
+                plane.position.y = -1
+                plane.position.z = 1.55
+                plane.receiveShadow = true
+                scene.add(plane)
+                renderer.render(scene, camera)
+            }
+        )
+
+        // 光照
+        const light = new THREE.DirectionalLight()
+        light.position.set(-2, 2, 2)
+        light.castShadow = true
+        light.shadow.mapSize.width = 4096
+        light.shadow.mapSize.height = 4096
+        scene.add(light)
+
+        // 使用環境光提高場景亮度
+        const ambientLight = new THREE.AmbientLight(0xcccccc)
+        scene.add(ambientLight)
+
+        renderer.render(scene, camera)
+    }
+
+    function createCube({width, height, depth}, material) {
+        return new THREE.Mesh(
+            new THREE.CubeGeometry(width, height, depth),
+            material
+        )
+    }
+
+    function createTorus({radius, tube, radialSegments, tubularSegments}, material) {
+        return new THREE.Mesh(
+            new THREE.TorusGeometry(radius, tube, radialSegments, tubularSegments),
+            material
+        )
+    }
+
+    function createPlane({width, height}, material) {
+        return new THREE.Mesh(
+            new THREE.PlaneGeometry(width, height),
+            material
+        )
+    }
+</script>
+</body>
+</html>
