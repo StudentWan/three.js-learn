@@ -66,7 +66,7 @@
         for (let i = 0; i < 6; i++) {
             bodyMaterial.push(
                 new THREE.MeshLambertMaterial({
-                    map: loader.load('./img/' + i + '.jpg', () => renderer.render(scene, camera)),
+                    map: loader.load('./img/' + i + '.png', () => renderer.render(scene, camera)),
                     overdraw: true
                 })
             )
@@ -77,7 +77,7 @@
 
         // 車輪
         const tireMaterial = new THREE.MeshLambertMaterial({
-            map: loader.load('./img/tire.jpg', () => renderer.render(scene, camera))
+            map: loader.load('./img/tire.png', () => renderer.render(scene, camera))
         })
         const tire1 = createTorus({radius: .27, tube: .09, radialSegments: 50, tubularSegments: 100}, tireMaterial)
         tire1.position.set(-.6, -.6, .5)
