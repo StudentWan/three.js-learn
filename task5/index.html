@@ -7,9 +7,7 @@
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <style>
-        html, body {
-            width: 100%;
-            height: 100%;
+        body {
             margin: 0;
         }
     </style>
@@ -17,10 +15,15 @@
 <body onload="init()">
 <canvas id="main-canvas"></canvas>
 <script src="three.js"></script>
-<script src="TrackballControls.js"></script>
+<script src="stats.min.js"></script>
 <script>
-    let controls, renderer, scene, camera
-    animate()
+    let renderer, scene, camera, stat
+
+    let cube, tire1, tire2, tire3, tire4
+
+    const ANGLE = Math.PI / 36
+    const DISTANCE = .1
+
     function init() {
         // 渲染器
         renderer = new THREE.WebGLRenderer({
@@ -40,17 +43,12 @@
         camera.position.set(5, 5, 5)
         camera.lookAt(new THREE.Vector3(0, 0, 0))
         scene.add(camera)
-        // 交互控制
-        controls = new THREE.TrackballControls(camera)
-        controls.rotateSpeed = 1.0
-        controls.zoomSpeed = 1.2
-        controls.panSpeed = .8
-        controls.noZoom = false
-        controls.noPan = false
-        controls.staticMoving = true
-        controls.dynamicDampingFactor = .3
-        controls.keys = [65, 83, 68]
-        controls.addEventListener('change', () => renderer.render(scene, camera))
+        // 记录帧率
+        stat = new Stats()
+        stat.domElement.style.position = 'absolute'
+        stat.domElement.style.left = '0px'
+        stat.domElement.style.top = '0px'
+        document.body.appendChild(stat.domElement)
         // 車體
         const bodyMaterial = []
         for (let i = 0; i < 6; i++) {
@@ -61,29 +59,34 @@
                 })
             )
         }
-        const cube = createCube({width: 2, height: 1.2, depth: 1}, new THREE.MeshFaceMaterial(bodyMaterial))
+        cube = createCube({width: 2, height: 1.2, depth: 1}, new THREE.MeshFaceMaterial(bodyMaterial))
         cube.castShadow = true
         scene.add(cube)
         // 車輪
         const tireMaterial = new THREE.MeshLambertMaterial({
             map: loader.load('./img/tire.png', () => renderer.render(scene, camera))
         })
-        const tire1 = createTorus({radius: .27, tube: .09, radialSegments: 50, tubularSegments: 100}, tireMaterial)
+        tire1 = createTorus({radius: .27, tube: .09, radialSegments: 50, tubularSegments: 100}, tireMaterial)
         tire1.position.set(-.6, -.6, .5)
         tire1.castShadow = true
-        scene.add(tire1)
-        const tire2 = createTorus({radius: .27, tube: .09, radialSegments: 50, tubularSegments: 100}, tireMaterial)
+
+        tire2 = createTorus({radius: .27, tube: .09, radialSegments: 50, tubularSegments: 100}, tireMaterial)
         tire2.position.set(.5, -.6, .5)
         tire2.castShadow = true
-        scene.add(tire2)
-        const tire3 = createTorus({radius: .27, tube: .09, radialSegments: 50, tubularSegments: 100}, tireMaterial)
+
+        tire3 = createTorus({radius: .27, tube: .09, radialSegments: 50, tubularSegments: 100}, tireMaterial)
         tire3.position.set(-.6, -.6, -.5)
         tire3.castShadow = true
-        scene.add(tire3)
-        const tire4 = createTorus({radius: .27, tube: .09, radialSegments: 50, tubularSegments: 100}, tireMaterial)
+
+        tire4 = createTorus({radius: .27, tube: .09, radialSegments: 50, tubularSegments: 100}, tireMaterial)
         tire4.position.set(.5, -.6, -.5)
         tire4.castShadow = true
-        scene.add(tire4)
+
+        cube.add(tire1)
+        cube.add(tire2)
+        cube.add(tire3)
+        cube.add(tire4)
+
         // 地板
         const planeMaterial = new THREE.MeshLambertMaterial({
             map: loader.load('./img/chess.png', (texture) => {
@@ -112,40 +115,75 @@
         scene.add(ambientLight)
         // 監聽窗口大小的改變
         window.addEventListener('resize', onWindowResize, false)
-        renderer.render(scene, camera)
+
+        document.addEventListener('keydown', onKeyDown, false)
+
+        requestAnimationFrame(draw)
     }
+
     function createCube({width, height, depth}, material) {
         return new THREE.Mesh(
             new THREE.CubeGeometry(width, height, depth),
             material
         )
     }
+
     function createTorus({radius, tube, radialSegments, tubularSegments}, material) {
         return new THREE.Mesh(
             new THREE.TorusGeometry(radius, tube, radialSegments, tubularSegments),
             material
         )
     }
+
     function createPlane({width, height}, material) {
         return new THREE.Mesh(
             new THREE.PlaneGeometry(width, height),
             material
         )
     }
-    function animate() {
-        requestAnimationFrame(animate)
-        try {
-            controls.update()
-        } catch (e) {
-        }
-    }
+
     function onWindowResize() {
         camera.aspect = window.innerWidth / window.innerHeight
         camera.updateProjectionMatrix()
         renderer.setSize(window.innerWidth, window.innerHeight)
-        controls.handleResize()
         renderer.render(scene, camera)
     }
+
+    function onKeyDown(evt) {
+        const keyCode = evt.keyCode
+        switch (keyCode) {
+            case 87: // w
+                drive(cube, DISTANCE, 0)
+                break
+            case 83: // s
+                drive(cube, -DISTANCE, 0)
+                break
+            case 65: // a
+                drive(cube, 0 , ANGLE)
+                break
+            case 68: // d
+                drive(cube, 0, -ANGLE)
+                break
+            default:
+                break
+        }
+    }
+
+    function drive(cube, dis, rad) {
+        // 改变角度
+        cube.rotation.y += rad
+        var direction = cube.rotation.y
+        // 改变位置
+        cube.position.x += dis * Math.cos(direction)
+        cube.position.z += -dis * Math.sin(direction)
+        stat.update()
+    }
+
+    function draw() {
+        renderer.render(scene, camera)
+        requestAnimationFrame(draw)
+    }
+
 </script>
 </body>
 </html>
