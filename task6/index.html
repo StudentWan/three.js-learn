@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>照相機和交互控制</title>
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <style>
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body onload="init()">
+<canvas id="main-canvas"></canvas>
+<script src="three.js"></script>
+<script src="MTLLoader.js"></script>
+<script src="OBJLoader.js"></script>
+<script src="stats.min.js"></script>
+<script>
+    let renderer, scene, camera, stat
+    let car
+
+    const ANGLE = Math.PI / 36
+    const DISTANCE = .1
+
+    function init() {
+        // 渲染器
+        renderer = new THREE.WebGLRenderer({
+            canvas: document.getElementById('main-canvas'),
+            antialias: true
+        })
+        renderer.setSize(window.innerWidth, window.innerHeight)
+        renderer.setClearColor(0x666666)
+        renderer.shadowMap.enabled = true
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap
+        // 場景
+        scene = new THREE.Scene()
+        // 材質渲染
+        const loader = new THREE.TextureLoader()
+        // 照相機
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 100)
+        camera.position.set(5, 5, 5)
+        camera.lookAt(new THREE.Vector3(0, 0, 0))
+        scene.add(camera)
+        // 记录帧率
+        stat = new Stats()
+        stat.domElement.style.position = 'absolute'
+        stat.domElement.style.left = '0px'
+        stat.domElement.style.top = '0px'
+        document.body.appendChild(stat.domElement)
+
+        // 車
+        const mtlLoader = new THREE.MTLLoader()
+        mtlLoader.load('mini.mtl', (materials) => {
+            materials.preload()
+
+            const objLoader = new THREE.OBJLoader()
+            objLoader.setMaterials(materials)
+            objLoader.load('mini.obj', (object) => {
+                object.traverse((child) => {
+                    if (child instanceof THREE.Mesh) {
+                        child.material.side = THREE.DoubleSide
+                    }
+
+                    object.position.y = -1
+                    object.rotation.set(-Math.PI / 2, 0, Math.PI / 2)
+                    car = object
+                    scene.add(object)
+                })
+            })
+        })
+
+        // 地板
+        const planeMaterial = new THREE.MeshLambertMaterial({
+            map: loader.load('./img/chess.png', (texture) => {
+                texture.wrapS = texture.wrapT = THREE.RepeatWrapping
+                texture.repeat.set(4, 4)
+                renderer.render(scene, camera)
+            }),
+            // 雙面
+            side: THREE.DoubleSide
+        })
+        const plane = createPlane({width: 5, height: 6}, planeMaterial)
+        // 沿著X軸旋轉
+        plane.rotation.x = -Math.PI / 2
+        plane.position.y = -.96
+        plane.receiveShadow = true
+        scene.add(plane)
+        // 光照
+        const light = new THREE.DirectionalLight()
+        light.position.set(-2, 2, 2)
+        light.castShadow = true
+        light.shadow.mapSize.width = 4096
+        light.shadow.mapSize.height = 4096
+        scene.add(light)
+        // 使用環境光提高場景亮度
+        const ambientLight = new THREE.AmbientLight(0xcccccc)
+        scene.add(ambientLight)
+        // 監聽窗口大小的改變
+        window.addEventListener('resize', onWindowResize, false)
+
+        document.addEventListener('keydown', onKeyDown, false)
+
+        requestAnimationFrame(draw)
+    }
+
+    function createPlane({width, height}, material) {
+        return new THREE.Mesh(
+            new THREE.PlaneGeometry(width, height),
+            material
+        )
+    }
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight
+        camera.updateProjectionMatrix()
+        renderer.setSize(window.innerWidth, window.innerHeight)
+        renderer.render(scene, camera)
+    }
+
+    function onKeyDown(evt) {
+        const keyCode = evt.keyCode
+        switch (keyCode) {
+            case 87: // w
+                drive(car, -DISTANCE, 0)
+                break
+            case 83: // s
+                drive(car, DISTANCE, 0)
+                break
+            case 65: // a
+                drive(car, 0 , ANGLE)
+                break
+            case 68: // d
+                drive(car, 0, -ANGLE)
+                break
+            default:
+                break
+        }
+    }
+
+    function drive(car, dis, rad) {
+        // 改变角度
+        car.rotation.z += rad;
+        var direction = car.rotation.z - Math.PI / 2;
+        // 改变位置
+        car.position.x += dis * Math.cos(direction)
+        car.position.z += -dis * Math.sin(direction)
+        stat.update()
+    }
+
+    function draw() {
+        renderer.render(scene, camera)
+        requestAnimationFrame(draw)
+    }
+
+</script>
+</body>
+</html>
